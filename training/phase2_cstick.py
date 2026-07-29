@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, ".")
 import pickle
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -12,6 +13,8 @@ from sklearn.metrics import classification_report, confusion_matrix, recall_scor
 
 from src.data_prep import load_cstick_clean
 
+Path("outputs").mkdir(exist_ok=True)
+Path("models").mkdir(exist_ok=True)
 df = load_cstick_clean()
 
 FEATURES = ["Distance", "HRV", "Sugar level", "SpO2"]
