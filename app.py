@@ -1,6 +1,7 @@
 from pathlib import Path
 import pickle
 import traceback
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -16,266 +17,404 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Temporary diagnostics: confirms which app file and model are being used.
-# Remove these two lines after the model loads successfully if desired.
-st.info(f"Running app from: {Path(__file__).resolve()}")
-st.info("Selected model: cstick_model.pkl")
-
 
 # =========================================================
-# CUSTOM CSS
+# CUSTOM CSS — ORIGINAL DARK STYLE + VISIBILITY FIXES
 # =========================================================
 st.markdown(
     """
-<style>
-    .stApp {
-        background-color: #0e1117;
-    }
+    <style>
+        html,
+        body,
+        .stApp,
+        [data-testid="stAppViewContainer"] {
+            max-width: 100%;
+            overflow-x: hidden !important;
+        }
 
-    .block-container {
-        max-width: 1100px;
-        padding-top: 2rem;
-        padding-bottom: 4rem;
-    }
+        .stApp {
+            background-color: #0e1117;
+            color: #ffffff;
+        }
 
-    .hero-container {
-        padding: 4rem 3rem;
-        margin-bottom: 2.5rem;
-        border: 1px solid #2f3542;
-        border-radius: 22px;
-        background:
-            radial-gradient(
-                circle at top right,
-                rgba(63, 187, 135, 0.18),
-                transparent 35%
-            ),
-            linear-gradient(135deg, #161b22, #101419);
-    }
+        .block-container {
+            width: 100%;
+            max-width: 1100px;
+            padding-top: 2rem;
+            padding-bottom: 4rem;
+            overflow-x: hidden;
+        }
 
-    .eyebrow {
-        display: inline-block;
-        padding: 0.4rem 0.8rem;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(72, 199, 142, 0.45);
-        border-radius: 999px;
-        background-color: rgba(72, 199, 142, 0.10);
-        color: #72d6aa;
-        font-size: 0.85rem;
-        font-weight: 700;
-        letter-spacing: 0.04rem;
-        text-transform: uppercase;
-    }
-
-    .hero-title {
-        max-width: 800px;
-        margin: 0;
-        color: #ffffff;
-        font-size: 3.4rem;
-        font-weight: 800;
-        line-height: 1.08;
-    }
-
-    .hero-description {
-        max-width: 800px;
-        margin-top: 1.35rem;
-        color: #c4c9d2;
-        font-size: 1.13rem;
-        line-height: 1.75;
-    }
-
-    .hero-note {
-        margin-top: 1.5rem;
-        color: #8f98a8;
-        font-size: 0.95rem;
-    }
-
-    .section-label {
-        color: #72d6aa;
-        font-size: 0.82rem;
-        font-weight: 700;
-        letter-spacing: 0.08rem;
-        text-transform: uppercase;
-    }
-
-    .section-title {
-        margin-top: 0.25rem;
-        margin-bottom: 0.5rem;
-        color: #ffffff;
-        font-size: 2rem;
-        font-weight: 750;
-    }
-
-    .section-description {
-        margin-bottom: 1.5rem;
-        color: #aeb5c1;
-        line-height: 1.65;
-    }
-
-    .info-card {
-        height: 100%;
-        min-height: 175px;
-        padding: 1.5rem;
-        border: 1px solid #303640;
-        border-radius: 16px;
-        background-color: #171b22;
-    }
-
-    .info-card h3 {
-        margin: 0 0 0.6rem 0;
-        color: #ffffff;
-        font-size: 1rem;
-    }
-
-    .info-card p {
-        margin: 0;
-        color: #aeb5c1;
-        line-height: 1.6;
-    }
-
-    .reference-box {
-        padding: 0.85rem 1rem;
-        margin-top: 0.45rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #4d8df7;
-        border-radius: 8px;
-        background-color: rgba(77, 141, 247, 0.09);
-        color: #bac6d8;
-        font-size: 0.86rem;
-        line-height: 1.5;
-    }
-
-    .risk-card {
-        padding: 2rem;
-        margin-top: 1.5rem;
-        border-radius: 18px;
-    }
-
-    .risk-low {
-        border: 1px solid rgba(46, 204, 113, 0.55);
-        background-color: rgba(46, 204, 113, 0.11);
-    }
-
-    .risk-moderate {
-        border: 1px solid rgba(243, 156, 18, 0.60);
-        background-color: rgba(243, 156, 18, 0.12);
-    }
-
-    .risk-high {
-        border: 1px solid rgba(231, 76, 60, 0.60);
-        background-color: rgba(231, 76, 60, 0.12);
-    }
-
-    .risk-heading {
-        margin-bottom: 0.5rem;
-        color: #ffffff;
-        font-size: 1rem;
-        font-weight: 650;
-    }
-
-    .risk-value {
-        margin: 0;
-        color: #ffffff;
-        font-size: 2rem;
-        font-weight: 800;
-    }
-
-    .risk-summary {
-        margin-top: 0.8rem;
-        color: #d0d5dd;
-        line-height: 1.6;
-    }
-
-    .factor {
-        padding: 1rem 1.1rem;
-        margin-bottom: 0.75rem;
-        border-left: 4px solid #586174;
-        border-radius: 8px;
-        background-color: #181d25;
-    }
-
-    .factor-title {
-        margin-bottom: 0.25rem;
-        color: #ffffff;
-        font-weight: 700;
-    }
-
-    .factor-description {
-        margin: 0;
-        color: #abb3c0;
-        line-height: 1.5;
-    }
-
-    .disclaimer {
-        padding: 1.25rem 1.4rem;
-        margin-top: 2rem;
-        border: 1px solid #343b47;
-        border-radius: 14px;
-        background-color: #151920;
-        color: #9fa7b5;
-        font-size: 0.9rem;
-        line-height: 1.6;
-    }
-
-    div.stButton > button,
-    div[data-testid="stFormSubmitButton"] > button {
-        width: 100%;
-        min-height: 3.2rem;
-        border: none;
-        border-radius: 10px;
-        background-color: #2fb579;
-        color: #ffffff;
-        font-size: 1rem;
-        font-weight: 700;
-    }
-
-    div.stButton > button:hover,
-    div[data-testid="stFormSubmitButton"] > button:hover {
-        border: none;
-        background-color: #279d69;
-        color: #ffffff;
-    }
-
-    [data-testid="stMetric"] {
-        padding: 1rem;
-        border: 1px solid #303640;
-        border-radius: 12px;
-        background-color: #171b22;
-    }
-
-    hr {
-        margin-top: 3rem;
-        margin-bottom: 3rem;
-        border-color: #292f39;
-    }
-
-    @media (max-width: 700px) {
         .hero-container {
-            padding: 2.5rem 1.5rem;
+            padding: 4rem 3rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid #2f3542;
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(63, 187, 135, 0.18),
+                    transparent 35%
+                ),
+                linear-gradient(135deg, #161b22, #101419);
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(72, 199, 142, 0.45);
+            border-radius: 999px;
+            background-color: rgba(72, 199, 142, 0.10);
+            color: #72d6aa;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04rem;
+            text-transform: uppercase;
         }
 
         .hero-title {
-            font-size: 2.35rem;
+            max-width: 800px;
+            margin: 0;
+            color: #ffffff;
+            font-size: 3.4rem;
+            font-weight: 800;
+            line-height: 1.08;
         }
-    }
-</style>
+
+        .hero-description {
+            max-width: 800px;
+            margin-top: 1.35rem;
+            color: #c4c9d2;
+            font-size: 1.13rem;
+            line-height: 1.75;
+        }
+
+        .hero-note {
+            margin-top: 1.5rem;
+            color: #8f98a8;
+            font-size: 0.95rem;
+        }
+
+        .section-label {
+            color: #72d6aa;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08rem;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 750;
+        }
+
+        .section-description {
+            margin-bottom: 1.5rem;
+            color: #aeb5c1;
+            line-height: 1.65;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+    align-items: stretch;
+}
+
+[data-testid="stColumn"] {
+    display: flex;
+}
+
+[data-testid="stColumn"] > div {
+    width: 100%;
+}
+
+.info-card {
+    width: 100%;
+    height: 100%;
+    min-height: 245px;
+    padding: 1.5rem;
+    border: 1px solid #303640;
+    border-radius: 16px;
+    background-color: #171b22;
+    box-sizing: border-box;
+}
+
+        .info-card h3 {
+            margin: 0 0 0.6rem 0;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .info-card p {
+            margin: 0;
+            color: #aeb5c1;
+            line-height: 1.6;
+        }
+
+        .reference-box {
+            padding: 0.85rem 1rem;
+            margin-top: 0.45rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #4d8df7;
+            border-radius: 8px;
+            background-color: rgba(77, 141, 247, 0.09);
+            color: #bac6d8;
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+
+        .risk-card {
+            padding: 2rem;
+            margin-top: 1.5rem;
+            border-radius: 18px;
+        }
+
+        .risk-low {
+            border: 1px solid rgba(46, 204, 113, 0.55);
+            background-color: rgba(46, 204, 113, 0.11);
+        }
+
+        .risk-moderate {
+            border: 1px solid rgba(243, 156, 18, 0.60);
+            background-color: rgba(243, 156, 18, 0.12);
+        }
+
+        .risk-high {
+            border: 1px solid rgba(231, 76, 60, 0.60);
+            background-color: rgba(231, 76, 60, 0.12);
+        }
+
+        .risk-heading {
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 650;
+        }
+
+        .risk-value {
+            margin: 0;
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .risk-summary {
+            margin-top: 0.8rem;
+            color: #d0d5dd;
+            line-height: 1.6;
+        }
+
+        .factor {
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #586174;
+            border-radius: 8px;
+            background-color: #181d25;
+        }
+
+        .factor-title {
+            margin-bottom: 0.25rem;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .factor-description {
+            margin: 0;
+            color: #abb3c0;
+            line-height: 1.5;
+        }
+
+        .disclaimer {
+            padding: 1.25rem 1.4rem;
+            margin-top: 2rem;
+            border: 1px solid #343b47;
+            border-radius: 14px;
+            background-color: #151920;
+            color: #9fa7b5;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        div.stButton > button,
+        div[data-testid="stFormSubmitButton"] > button {
+            width: 100%;
+            min-height: 3.2rem;
+            border: none;
+            border-radius: 10px;
+            background-color: #2fb579;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        div.stButton > button:hover,
+        div[data-testid="stFormSubmitButton"] > button:hover {
+            border: none;
+            background-color: #279d69;
+            color: #ffffff;
+        }
+
+        [data-testid="stMetric"] {
+            padding: 1rem;
+            border: 1px solid #303640;
+            border-radius: 12px;
+            background-color: #171b22;
+        }
+
+        [data-testid="stMetricLabel"],
+        [data-testid="stMetricValue"] {
+            color: #ffffff !important;
+        }
+
+        /* Keep tabs visible and preserve dark styling */
+        [data-testid="stTabs"] {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        [data-testid="stTabs"] [role="tablist"] {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        button[data-baseweb="tab"] {
+            color: #aeb5c1 !important;
+            font-weight: 650;
+        }
+
+        button[data-baseweb="tab"] p,
+        button[data-baseweb="tab"] span {
+            color: inherit !important;
+        }
+
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #72d6aa !important;
+        }
+
+        /* Keep form text readable */
+        [data-testid="stNumberInput"] label,
+        [data-testid="stWidgetLabel"],
+        [data-testid="stWidgetLabel"] p {
+            color: #ffffff !important;
+        }
+
+        [data-testid="stNumberInput"] input {
+            color: #ffffff !important;
+            background-color: #262a33 !important;
+        }
+
+        [data-testid="stNumberInput"] button {
+            color: #ffffff !important;
+            background-color: #262a33 !important;
+        }
+
+        [data-testid="stNumberInput"] svg {
+            fill: #ffffff !important;
+        }
+
+        /* Rectangular dropdown / expander styling */
+[data-testid="stExpander"] {
+    border: 1px solid #343b47 !important;
+    border-radius: 14px !important;
+    background-color: #151920 !important;
+    overflow: hidden;
+}
+
+/* Closed and open expander header */
+[data-testid="stExpander"] summary {
+    background-color: #151920 !important;
+    color: #ffffff !important;
+}
+
+/* Keep header dark when expanded */
+[data-testid="stExpander"] details[open] > summary {
+    background-color: #151920 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #343b47 !important;
+}
+
+/* Header text and arrow */
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
+/* Expanded content area */
+[data-testid="stExpanderDetails"] {
+    background-color: #151920 !important;
+    color: #aeb5c1 !important;
+}
+
+[data-testid="stExpanderDetails"] p,
+[data-testid="stExpanderDetails"] span,
+[data-testid="stExpanderDetails"] li {
+    color: #aeb5c1 !important;
+}
+
+        [data-testid="stExpander"] summary,
+        [data-testid="stExpander"] summary p,
+        [data-testid="stExpander"] summary span {
+            color: #ffffff !important;
+            font-weight: 650;
+        }
+
+        [data-testid="stExpanderDetails"],
+        [data-testid="stExpanderDetails"] p,
+        [data-testid="stExpanderDetails"] span {
+            color: #aeb5c1 !important;
+        }
+
+        /* Alert boxes */
+        [data-testid="stAlert"] {
+            border-radius: 12px;
+        }
+
+        /* Dataframes should scroll internally instead of shifting the page */
+        [data-testid="stDataFrame"] {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        hr {
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+            border-color: #292f39;
+        }
+
+        @media (max-width: 700px) {
+            .hero-container {
+                padding: 2.5rem 1.5rem;
+            }
+
+            .hero-title {
+                font-size: 2.35rem;
+            }
+
+            .block-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .info-card {
+                min-height: auto;
+            }
+        }
+    </style>
     """,
     unsafe_allow_html=True,
 )
 
 
 # =========================================================
-# MODEL FILE SETTINGS
+# MODEL SETTINGS
 # =========================================================
-
-# Add your exact filename here when you know it.
-# Examples:
-# MODEL_FILENAME = "fall_risk_model.pkl"
-# MODEL_FILENAME = "random_forest_model.joblib"
-#
-# Leave it as None to let the app search automatically.
 MODEL_FILENAME = "cstick_model.pkl"
 
-# Folders the app will search.
 MODEL_FOLDERS = [
     Path("."),
     Path("models"),
@@ -283,7 +422,6 @@ MODEL_FOLDERS = [
     Path("saved_models"),
 ]
 
-# Supported saved-model file extensions.
 MODEL_EXTENSIONS = [
     "*.pkl",
     "*.pickle",
@@ -292,17 +430,9 @@ MODEL_EXTENSIONS = [
 
 
 # =========================================================
-# MODEL LOADING FUNCTIONS
+# MODEL LOADING
 # =========================================================
 def find_model_file():
-    """
-    Finds the model file.
-
-    Priority:
-    1. The exact filename entered in MODEL_FILENAME
-    2. A supported model file in the project folders
-    """
-
     if MODEL_FILENAME:
         possible_paths = [
             Path(MODEL_FILENAME),
@@ -324,30 +454,25 @@ def find_model_file():
         for extension in MODEL_EXTENSIONS:
             discovered_models.extend(folder.glob(extension))
 
-    # Remove duplicate paths.
     discovered_models = list(dict.fromkeys(discovered_models))
 
-    if len(discovered_models) == 1:
-        return discovered_models[0]
+    if not discovered_models:
+        return None
 
-    if len(discovered_models) > 1:
-        # Prefer filenames containing relevant words.
-        preferred_words = [
-            "fall",
-            "risk",
-            "model",
-            "classifier",
-            "random_forest",
-        ]
+    preferred_words = [
+        "fall",
+        "risk",
+        "model",
+        "classifier",
+        "random_forest",
+    ]
 
-        for word in preferred_words:
-            for path in discovered_models:
-                if word in path.name.lower():
-                    return path
+    for word in preferred_words:
+        for path in discovered_models:
+            if word in path.name.lower():
+                return path
 
-        return discovered_models[0]
-
-    return None
+    return discovered_models[0]
 
 
 @st.cache_resource
@@ -358,9 +483,7 @@ def load_model(model_path_string):
         model_bundle = pickle.load(model_file)
 
     if not isinstance(model_bundle, dict):
-        raise TypeError(
-            "The saved model file must contain a dictionary."
-        )
+        raise TypeError("The saved model file must contain a dictionary.")
 
     required_keys = {
         "model",
@@ -379,23 +502,6 @@ def load_model(model_path_string):
 
     return model_bundle
 
-def list_project_files():
-    """
-    Returns visible project files to help diagnose model-path problems.
-    """
-
-    visible_files = []
-
-    for path in Path(".").rglob("*"):
-        if (
-            path.is_file()
-            and ".git" not in path.parts
-            and ".venv" not in path.parts
-            and "__pycache__" not in path.parts
-        ):
-            visible_files.append(str(path))
-
-    return sorted(visible_files)
 
 model_path = find_model_file()
 
@@ -411,7 +517,6 @@ model_loading_traceback = None
 if model_path is not None:
     try:
         model_bundle = load_model(str(model_path))
-
         model = model_bundle["model"]
         scaler = model_bundle["scaler"]
         model_features = model_bundle["features"]
@@ -426,12 +531,6 @@ if model_path is not None:
 # PREDICTION HELPERS
 # =========================================================
 def normalize_prediction(prediction):
-    """
-    Converts the model's class label into low, moderate, or high.
-
-    Change these mappings if your model uses different labels.
-    """
-
     prediction_text = str(prediction).strip().lower()
 
     low_labels = {
@@ -512,16 +611,75 @@ def get_risk_information(risk_level):
 
 
 def get_prediction_confidence(trained_model, input_data):
-    """
-    Gets the highest class probability when predict_proba is supported.
-    """
-
     if not hasattr(trained_model, "predict_proba"):
         return None
 
     probabilities = trained_model.predict_proba(input_data)[0]
-
     return float(np.max(probabilities))
+
+
+def get_confidence_explanation(confidence):
+    if confidence is None:
+        return (
+            "This model does not provide class probabilities, so a confidence "
+            "percentage cannot be displayed."
+        )
+
+    percentage = confidence * 100
+
+    if percentage < 55:
+        return (
+            "The model confidence is low because more than one risk category "
+            "received a similar probability. The submitted measurements may be "
+            "close to a decision boundary, may contain a mixed pattern, or may "
+            "not closely resemble one clear pattern in the training data."
+        )
+
+    if percentage < 70:
+        return (
+            "The model confidence is moderate. One category received the highest "
+            "probability, but at least one other category remained reasonably "
+            "plausible. Small changes in the measurements could potentially "
+            "change the result."
+        )
+
+    return (
+        "The model confidence is relatively strong because one category received "
+        "a clearly higher probability than the alternatives. This does not mean "
+        "the prediction is medically certain."
+    )
+
+
+def get_default_values(feature_names, fitted_scaler):
+    """
+    Uses training-set averages stored in the fitted scaler when available.
+    Otherwise, it uses reasonable demonstration values.
+
+    These values are examples only and are not clinical recommendations.
+    """
+    defaults = {
+        "Distance": 3.0,
+        "HRV": 40.0,
+        "Sugar level": 100.0,
+        "SpO2": 98.0,
+    }
+
+    if (
+        fitted_scaler is not None
+        and hasattr(fitted_scaler, "mean_")
+        and feature_names is not None
+        and len(fitted_scaler.mean_) == len(feature_names)
+    ):
+        for feature, mean_value in zip(feature_names, fitted_scaler.mean_):
+            if feature in defaults and np.isfinite(mean_value):
+                defaults[feature] = float(mean_value)
+
+    defaults["Distance"] = max(0.0, defaults["Distance"])
+    defaults["HRV"] = max(0.0, defaults["HRV"])
+    defaults["Sugar level"] = max(0.0, defaults["Sugar level"])
+    defaults["SpO2"] = min(100.0, max(0.0, defaults["SpO2"]))
+
+    return defaults
 
 
 def explain_measurements(
@@ -531,26 +689,25 @@ def explain_measurements(
     oxygen_level,
 ):
     """
-    Generates plain-language explanations.
+    Creates plain-language explanations based on interface thresholds.
 
-    The thresholds below are explanatory interface values.
-    They may not be the exact thresholds learned by the model.
+    These thresholds are not exact model feature-attribution values.
     """
-
     factors = []
 
-    # Oxygen
     if oxygen_level < 90:
         factors.append(
             {
                 "title": "Very low submitted oxygen saturation",
                 "description": (
-                    "A low SpO₂ reading may be associated with symptoms such as "
-                    "weakness, fatigue, confusion, or dizziness. These symptoms "
-                    "could make safe movement more difficult."
+                    "A low SpO₂ reading may be associated with weakness, fatigue, "
+                    "confusion, or dizziness. These symptoms could make safe "
+                    "movement more difficult."
                 ),
+                "direction": "higher",
             }
         )
+
     elif oxygen_level < 95:
         factors.append(
             {
@@ -560,8 +717,10 @@ def explain_measurements(
                     "95% to 100%. Personal medical conditions, elevation, and "
                     "device accuracy can affect what is appropriate."
                 ),
+                "direction": "higher",
             }
         )
+
     else:
         factors.append(
             {
@@ -570,11 +729,10 @@ def explain_measurements(
                     "The submitted SpO₂ value is within the application's general "
                     "reference range."
                 ),
+                "direction": "lower",
             }
         )
 
-    # Movement
-    # Replace these thresholds with values appropriate for your dataset.
     if movement_distance < 1:
         factors.append(
             {
@@ -584,8 +742,10 @@ def explain_measurements(
                     "activity, cautious movement, or difficulty completing normal "
                     "movement."
                 ),
+                "direction": "higher",
             }
         )
+
     elif movement_distance < 3:
         factors.append(
             {
@@ -594,8 +754,10 @@ def explain_measurements(
                     "Reduced movement may be associated with lower mobility or "
                     "possible difficulty maintaining stable movement."
                 ),
+                "direction": "higher",
             }
         )
+
     else:
         factors.append(
             {
@@ -604,11 +766,10 @@ def explain_measurements(
                     "The movement value does not fall below the application's "
                     "current explanatory threshold."
                 ),
+                "direction": "lower",
             }
         )
 
-    # HRV
-    # These are example research-interface ranges only.
     if hrv < 20:
         factors.append(
             {
@@ -618,8 +779,10 @@ def explain_measurements(
                     "range. HRV must be interpreted using the specific wearable, "
                     "measurement method, age, and personal baseline."
                 ),
+                "direction": "higher",
             }
         )
+
     elif hrv < 40:
         factors.append(
             {
@@ -628,8 +791,10 @@ def explain_measurements(
                     "The HRV value is within the application's caution range. "
                     "There is no single healthy HRV value that applies to everyone."
                 ),
+                "direction": "mixed",
             }
         )
+
     else:
         factors.append(
             {
@@ -638,10 +803,10 @@ def explain_measurements(
                     "The HRV value does not fall below the application's current "
                     "explanatory threshold."
                 ),
+                "direction": "lower",
             }
         )
 
-    # Blood glucose
     if glucose_level < 70:
         factors.append(
             {
@@ -650,8 +815,10 @@ def explain_measurements(
                     "Low blood glucose can be associated with shakiness, weakness, "
                     "confusion, or dizziness, which may affect safe movement."
                 ),
+                "direction": "higher",
             }
         )
+
     elif glucose_level > 180:
         factors.append(
             {
@@ -661,8 +828,10 @@ def explain_measurements(
                     "post-meal reference. Interpretation depends on when the "
                     "measurement was taken and the person's medical guidance."
                 ),
+                "direction": "higher",
             }
         )
+
     else:
         factors.append(
             {
@@ -672,10 +841,52 @@ def explain_measurements(
                     "range used by this explanation system. Meal timing still "
                     "affects interpretation."
                 ),
+                "direction": "lower",
             }
         )
 
     return factors
+
+
+def get_result_reasoning(risk_level, factors):
+    higher_risk_factors = [
+        factor for factor in factors if factor["direction"] == "higher"
+    ]
+
+    lower_risk_factors = [
+        factor for factor in factors if factor["direction"] == "lower"
+    ]
+
+    mixed_factors = [
+        factor for factor in factors if factor["direction"] == "mixed"
+    ]
+
+    if risk_level == "high":
+        explanation = (
+            "The high-risk category may reflect the combined pattern of the "
+            "submitted measurements, especially the values flagged below."
+        )
+        selected_factors = higher_risk_factors or mixed_factors or factors
+
+    elif risk_level == "moderate":
+        explanation = (
+            "The possible-risk category may reflect a mixed pattern. Some "
+            "measurements may indicate concern while others are not strongly "
+            "flagged."
+        )
+        selected_factors = higher_risk_factors + mixed_factors
+
+        if not selected_factors:
+            selected_factors = factors
+
+    else:
+        explanation = (
+            "The low-risk category may reflect the absence of multiple strongly "
+            "flagged measurements in this submission."
+        )
+        selected_factors = lower_risk_factors or factors
+
+    return explanation, selected_factors
 
 
 def get_precaution_message(risk_level):
@@ -709,11 +920,6 @@ def build_input_dataframe(
     oxygen_level,
     feature_names,
 ):
-    """
-    Builds the input DataFrame using the exact feature names and order
-    stored inside the saved model bundle.
-    """
-
     entered_values = {
         "Distance": movement_distance,
         "HRV": hrv,
@@ -740,474 +946,545 @@ def build_input_dataframe(
 
     return pd.DataFrame([ordered_values])
 
+
+def get_performance_dataframe(bundle):
+    """
+    Reads performance metrics if they were stored in the model bundle as either:
+    bundle["performance"] or bundle["metrics"].
+    """
+    if not bundle:
+        return None
+
+    performance = bundle.get("performance") or bundle.get("metrics")
+
+    if not isinstance(performance, dict) or not performance:
+        return None
+
+    rows = []
+
+    for metric, value in performance.items():
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            numeric_value = float(value)
+
+            if numeric_value <= 1:
+                numeric_value *= 100
+
+            rows.append(
+                {
+                    "Metric": str(metric),
+                    "Score": numeric_value,
+                }
+            )
+
+    if not rows:
+        return None
+
+    return pd.DataFrame(rows)
+
+
 # =========================================================
 # HERO SECTION
 # =========================================================
 st.markdown(
     """
-<div class="hero-container">
-    <div class="eyebrow">AI4ALL Research Project</div>
+    <div class="hero-container">
+        <div class="eyebrow">AI4ALL Research Project</div>
 
-<h1 class="hero-title">
-        Wearable Fall Risk Detection
-</h1>
+    <h1 class="hero-title">
+            Wearable Fall Risk Detection
+    </h1>
 
-<p class="hero-description">
-        This project explores whether wearable sensor measurements can help
-        distinguish normal movement from possible near-fall and fall events.
-        Enter movement and physiological measurements below to receive a
-        machine-learning risk estimate and an explanation of the factors
-        that may require additional attention.
-</p>
+    <p class="hero-description">
+            This project explores whether wearable sensor measurements can help
+            distinguish normal movement from possible near-fall and fall events.
+            Enter movement and physiological measurements below to receive a
+            machine-learning risk estimate, model confidence context, and an
+            explanation of the submitted values.
+    </p>
 
-<p class="hero-note">
-        Machine learning • Wearable sensors • Mobility research
-</p>
-</div>
+    <p class="hero-note">
+            Machine learning • Wearable sensors • Mobility research
+    </p>
+    </div>
     """,
     unsafe_allow_html=True,
 )
 
 
 # =========================================================
-# PROJECT CARDS
+# APPLICATION TABS
 # =========================================================
-card_one, card_two, card_three = st.columns(3)
-
-with card_one:
-    st.markdown(
-        """
-<div class="info-card">
-    <h3>Wearable measurements</h3>
-    <p>
-        The assessment uses movement distance, heart rate variability,
-        blood glucose, and blood oxygen saturation.
-    </p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with card_two:
-    st.markdown(
-        """
-<div class="info-card">
-    <h3>Research purpose</h3>
-    <p>
-        The project investigates whether changes in wearable data can
-        support earlier recognition of mobility concerns.
-    </p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with card_three:
-    st.markdown(
-        """
-<div class="info-card">
-    <h3>Interpretable results</h3>
-<p>
-        The application presents a risk category and explains which
-        submitted measurements may deserve attention.
-</p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-st.markdown("<hr>", unsafe_allow_html=True)
-
-
-# =========================================================
-# ASSESSMENT FORM
-# =========================================================
-st.markdown(
-    """
-<div class="section-label">Fall-risk assessment</div>
-<div class="section-title">Enter wearable sensor measurements</div>
-<div class="section-description">
-    Select the question-mark icon beside each label to learn what the
-    measurement means and see general reference information.
-</div>
-    """,
-    unsafe_allow_html=True,
+assessment_tab, performance_tab, about_tab = st.tabs(
+    [
+        "🩺 Assessment",
+        "📊 Model Performance",
+        "ℹ️ About the Project",
+    ]
 )
 
 
-with st.form("fall_risk_form"):
-    left_column, right_column = st.columns(2)
-
-    with left_column:
-        movement_distance = st.number_input(
-            "Movement Distance",
-            min_value=0.0,
-            value=0.0,
-            step=0.1,
-            format="%.2f",
-            help=(
-                "The amount of movement detected during the measurement period. "
-                "Use the same unit and measurement period as the dataset used to "
-                "train the model. There is no universal reference range because "
-                "wearables can report movement in different ways."
-            ),
-        )
-
-        st.markdown(
-            """
-<div class="reference-box">
-    <strong>Reference:</strong> No universal range. The appropriate
-    value depends on the wearable, unit, and recording period.
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        hrv = st.number_input(
-            "Heart Rate Variability (HRV)",
-            min_value=0.0,
-            value=0.0,
-            step=0.1,
-            format="%.2f",
-            help=(
-                "HRV measures differences in time between consecutive heartbeats. "
-                "It is not the same as heart rate. HRV may be measured using RMSSD, "
-                "SDNN, or another method, commonly in milliseconds. There is no "
-                "single appropriate HRV value for everyone. Enter the value and "
-                "metric produced by the wearable used in this research."
-            ),
-        )
-
-        st.markdown(
-            """
-<div class="reference-box">
-    <strong>Reference:</strong> HRV should be compared with the
-    person's usual baseline and the same device and HRV metric.
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with right_column:
-        glucose_level = st.number_input(
-            "Blood Glucose Level (mg/dL)",
-            min_value=0.0,
-            value=100.0,
-            step=1.0,
-            format="%.1f",
-            help=(
-                "Blood glucose describes the amount of glucose in the blood. "
-                "Typical targets for many people with diabetes are 80–130 mg/dL "
-                "before a meal and below 180 mg/dL one to two hours after the "
-                "start of a meal. Personal targets may differ."
-            ),
-        )
-
-        st.markdown(
-            """
-<div class="reference-box">
-    <strong>General context:</strong> 80–130 mg/dL before a meal;
-    below 180 mg/dL about 1–2 hours after eating. Personal targets vary.
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        oxygen_level = st.number_input(
-            "Oxygen Saturation (SpO₂ %)",
-            min_value=0.0,
-            max_value=100.0,
-            value=98.0,
-            step=0.1,
-            format="%.1f",
-            help=(
-                "SpO₂ estimates the percentage of red blood cells carrying oxygen. "
-                "It can be measured with a pulse oximeter or supported wearable. "
-                "A commonly cited normal range is approximately 95%–100%, though "
-                "lung conditions, elevation, circulation, skin temperature, and "
-                "device accuracy may affect readings."
-            ),
-        )
-
-        st.markdown(
-            """
-<div class="reference-box">
-    <strong>General reference:</strong> Approximately 95%–100%.
-    Medical conditions and elevation may affect an appropriate reading.
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    submitted = st.form_submit_button(
-        "Predict Fall Risk",
-        use_container_width=True,
-    )
-
-
 # =========================================================
-# PREDICTION RESULTS
+# ASSESSMENT TAB
 # =========================================================
-if submitted:
-    if model_path is None:
-        st.error(
-            "No saved machine-learning model was found in the application files."
-        )
-
-        st.markdown(
-            """
-            ### How to fix this
-
-            Your saved model must be committed to the GitHub repository used by
-            Streamlit. Place it in either the main folder or a folder named
-            `models`.
-
-            Example project structure:
-
-            ```text
-            ai4all/
-            ├── app.py
-            ├── requirements.txt
-            ├── fall_risk_model.pkl
-            └── README.md
-            ```
-
-            Or:
-
-            ```text
-            ai4all/
-            ├── app.py
-            ├── requirements.txt
-            ├── models/
-            │   └── fall_risk_model.pkl
-            └── README.md
-            ```
-            """
-        )
-
-        project_files = list_project_files()
-
-        with st.expander("View files currently available to the app"):
-            if project_files:
-                st.code("\n".join(project_files))
-            else:
-                st.write("No project files were detected.")
-
-        st.stop()
-
-    if model_loading_error:
-        st.error(
-            f"The model file `{model_path}` was found, but it could not be loaded."
-        )
-
-        st.write("Error type and message:")
-        st.code(model_loading_error)
-
-        with st.expander("View complete traceback"):
-            st.code(model_loading_traceback or "No traceback was captured.")
-
-        st.info(
-            "This usually means the model file is incomplete, was saved with a "
-            "missing dependency, or was created using incompatible package versions."
-        )
-
-        st.stop()
-
-    input_data = build_input_dataframe(
-        movement_distance=movement_distance,
-        hrv=hrv,
-        glucose_level=glucose_level,
-        oxygen_level=oxygen_level,
-        feature_names=model_features,
-
-    )
-
-    try:
-        # Logistic Regression uses the saved scaler. A Decision Tree does not.
-        if scaler is not None:
-            prediction_input = scaler.transform(input_data)
-        else:
-            prediction_input = input_data
-
-        raw_prediction = model.predict(prediction_input)[0]
-
-        risk_level = normalize_prediction(raw_prediction)
-        risk_information = get_risk_information(risk_level)
-
-        confidence = get_prediction_confidence(
-            trained_model=model,
-            input_data=prediction_input,
-        )
-
-    except ValueError as error:
-        st.error(
-            "The model was loaded, but the input columns do not match the "
-            "features used during model training."
-        )
-
-        st.code(str(error))
-
-        if hasattr(model, "feature_names_in_"):
-            st.write("The model expects these feature names:")
-
-            st.code(
-                "\n".join(
-                    str(feature)
-                    for feature in model.feature_names_in_
-                )
-            )
-
-        st.write("The application currently sends these feature names:")
-
-        st.code("\n".join(input_data.columns))
-
-        st.stop()
-
-    except Exception as error:
-        st.error("An unexpected prediction error occurred.")
-        st.code(str(error))
-        st.stop()
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-
+with assessment_tab:
     st.markdown(
         """
-<div class="section-label">Assessment result</div>
-<div class="section-title">Fall-risk detectability</div>
+        <div class="section-label">Fall-risk assessment</div>
+        <div class="section-title">Enter wearable sensor measurements</div>
+        <div class="section-description">
+            Demonstration values are already entered so you can press the
+            prediction button immediately. These are convenience defaults,
+            not clinical recommendations.
+        </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        f"""
-<div class="risk-card {risk_information["css_class"]}">
-    <div class="risk-heading">Prediction Result</div>
+    defaults = get_default_values(model_features, scaler)
 
-<p class="risk-value">
-        {risk_information["symbol"]}
-        {risk_information["label"]}
-</p>
+    with st.form("fall_risk_form"):
+        left_column, right_column = st.columns(2)
 
-<p class="risk-summary">
-        {risk_information["summary"]}
-</p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    metric_one, metric_two = st.columns(2)
-
-    with metric_one:
-        st.metric(
-            label="Risk category",
-            value=risk_information["label"],
-        )
-
-    with metric_two:
-        if confidence is not None:
-            st.metric(
-                label="Model confidence",
-                value=f"{confidence * 100:.1f}%",
-            )
-        else:
-            st.metric(
-                label="Model confidence",
-                value="Not available",
+        with left_column:
+            movement_distance = st.number_input(
+                "Movement Distance",
+                min_value=0.0,
+                value=float(defaults["Distance"]),
+                step=0.1,
+                format="%.2f",
+                help=(
+                    "The amount of movement detected during the measurement "
+                    "period. Use the same unit and measurement period as the "
+                    "dataset used to train the model."
+                ),
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    st.markdown(
-        """
-<div class="section-label">Result interpretation</div>
-<div class="section-title">
-    Why might this person need to be careful?
-</div>
-<div class="section-description">
-    These explanations describe possible concerns associated with the
-    entered measurements. They do not prove that a measurement caused
-    the model's prediction.
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    factors = explain_measurements(
-        movement_distance=movement_distance,
-        hrv=hrv,
-        glucose_level=glucose_level,
-        oxygen_level=oxygen_level,
-    )
-
-    if factors:
-        for factor in factors:
             st.markdown(
-                f"""
-<div class="factor">
-    <div class="factor-title">{factor["title"]}</div>
-    <p class="factor-description">{factor["description"]}</p>
-</div>
+                """
+                <div class="reference-box">
+                    <strong>Reference:</strong> No universal range. The correct
+                    value depends on the wearable, unit, and recording period.
+                </div>
                 """,
                 unsafe_allow_html=True,
             )
-    else:
-        st.info(
-            "No individual measurement crossed the application's explanatory "
-            "thresholds. The prediction may reflect the combined pattern across "
-            "multiple measurements rather than one value alone."
+
+            hrv = st.number_input(
+                "Heart Rate Variability (HRV)",
+                min_value=0.0,
+                value=float(defaults["HRV"]),
+                step=0.1,
+                format="%.2f",
+                help=(
+                    "HRV measures differences in time between consecutive "
+                    "heartbeats. It should be interpreted using the same device, "
+                    "metric, and personal baseline."
+                ),
+            )
+
+            st.markdown(
+                """
+                <div class="reference-box">
+                    <strong>Reference:</strong> HRV should be compared with the
+                    person's usual baseline and the same device and HRV metric.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with right_column:
+            glucose_level = st.number_input(
+                "Blood Glucose Level (mg/dL)",
+                min_value=0.0,
+                value=float(defaults["Sugar level"]),
+                step=1.0,
+                format="%.1f",
+                help=(
+                    "Blood glucose interpretation depends on meal timing, medical "
+                    "history, and the person's individual medical guidance."
+                ),
+            )
+
+            st.markdown(
+                """
+                <div class="reference-box">
+                    <strong>General context:</strong> 80–130 mg/dL before a meal;
+                    below 180 mg/dL about 1–2 hours after eating. Personal targets
+                    vary.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            oxygen_level = st.number_input(
+                "Oxygen Saturation (SpO₂ %)",
+                min_value=0.0,
+                max_value=100.0,
+                value=float(defaults["SpO2"]),
+                step=0.1,
+                format="%.1f",
+                help=(
+                    "A commonly cited normal range is approximately 95%–100%, "
+                    "though medical conditions, elevation, and device accuracy "
+                    "may affect readings."
+                ),
+            )
+
+            st.markdown(
+                """
+                <div class="reference-box">
+                    <strong>General reference:</strong> Approximately 95%–100%.
+                    Medical conditions and elevation may affect an appropriate
+                    reading.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        submitted = st.form_submit_button(
+            "Predict Fall Risk",
+            use_container_width=True,
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    if submitted:
+        if model_path is None:
+            st.error(
+                "No saved machine-learning model was found in the application files."
+            )
+            st.stop()
 
+        if model_loading_error:
+            st.error(
+                f"The model file `{model_path}` was found, but it could not be loaded."
+            )
+
+            st.write("Error type and message:")
+            st.code(model_loading_error)
+
+            with st.expander("View complete traceback"):
+                st.code(model_loading_traceback or "No traceback was captured.")
+
+            st.stop()
+
+        try:
+            input_data = build_input_dataframe(
+                movement_distance=movement_distance,
+                hrv=hrv,
+                glucose_level=glucose_level,
+                oxygen_level=oxygen_level,
+                feature_names=model_features,
+            )
+
+            if scaler is not None:
+                prediction_input = scaler.transform(input_data)
+            else:
+                prediction_input = input_data
+
+            raw_prediction = model.predict(prediction_input)[0]
+
+            risk_level = normalize_prediction(raw_prediction)
+            risk_information = get_risk_information(risk_level)
+
+            confidence = get_prediction_confidence(
+                trained_model=model,
+                input_data=prediction_input,
+            )
+
+        except ValueError as error:
+            st.error(
+                "The model was loaded, but the submitted columns do not match "
+                "the features used during model training."
+            )
+            st.code(str(error))
+            st.stop()
+
+        except Exception as error:
+            st.error("An unexpected prediction error occurred.")
+            st.code(str(error))
+            st.stop()
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+
+        st.markdown(
+            """
+            <div class="section-label">Assessment result</div>
+            <div class="section-title">Fall-risk detectability</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f"""
+            <div class="risk-card {risk_information["css_class"]}">
+                <div class="risk-heading">Prediction Result</div>
+
+            <p class="risk-value">
+                    {risk_information["symbol"]}
+                    {risk_information["label"]}
+            </p>
+
+            <p class="risk-summary">
+                    {risk_information["summary"]}
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        metric_one, metric_two = st.columns(2)
+
+        with metric_one:
+            st.metric(
+                label="Risk category",
+                value=risk_information["label"],
+            )
+
+        with metric_two:
+            if confidence is not None:
+                st.metric(
+                    label="Model confidence",
+                    value=f"{confidence * 100:.1f}%",
+                )
+            else:
+                st.metric(
+                    label="Model confidence",
+                    value="Not available",
+                )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        with st.expander(
+            "Why is the model confidence at this level?",
+            expanded=True,
+        ):
+            st.write(get_confidence_explanation(confidence))
+
+            st.caption(
+                "Model confidence is the highest class probability produced by "
+                "the model. It does not represent medical certainty or the exact "
+                "chance that a person will fall."
+            )
+
+        factors = explain_measurements(
+            movement_distance=movement_distance,
+            hrv=hrv,
+            glucose_level=glucose_level,
+            oxygen_level=oxygen_level,
+        )
+
+        reasoning_text, selected_factors = get_result_reasoning(
+            risk_level=risk_level,
+            factors=factors,
+        )
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+
+
+        with st.expander(
+            f"Why did the model return {risk_information['label']}?",
+            expanded=True,
+        ):
+            st.write(reasoning_text)
+
+            for factor in selected_factors:
+                st.markdown(
+                    f"""
+                    <div class="factor">
+                        <div class="factor-title">{factor["title"]}</div>
+
+                    <p class="factor-description">
+                            {factor["description"]}
+                    </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.caption(
+                "These are rule-based explanations of the submitted measurements. "
+                "They are not exact feature-attribution values from the trained "
+                "model. The prediction may depend on interactions between several "
+                "measurements."
+            )
+
+        with st.expander("Suggested caution"):
+            st.info(get_precaution_message(risk_level))
+
+        with st.expander("View submitted measurements"):
+            submitted_values = pd.DataFrame(
+                {
+                    "Measurement": [
+                        "Movement Distance",
+                        "Heart Rate Variability",
+                        "Blood Glucose",
+                        "Oxygen Saturation",
+                    ],
+                    "Submitted Value": [
+                        movement_distance,
+                        hrv,
+                        glucose_level,
+                        oxygen_level,
+                    ],
+                }
+            )
+
+            st.dataframe(
+                submitted_values,
+                hide_index=True,
+                use_container_width=True,
+            )
+
+
+# =========================================================
+# MODEL PERFORMANCE TAB
+# =========================================================
+with performance_tab:
     st.markdown(
         """
-<div class="section-label">Suggested caution</div>
-<div class="section-title">
-    What should the person consider?
-</div>
+        <div class="section-label">Evaluation</div>
+        <div class="section-title">Model performance</div>
+        <div class="section-description">
+            Review model quality separately from the prediction form. Add your
+            evaluation chart and metrics here after calculating them on your
+            held-out test data.
+        </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.info(get_precaution_message(risk_level))
+    performance_dataframe = get_performance_dataframe(model_bundle)
 
-    with st.expander("View submitted measurements"):
-        submitted_values = pd.DataFrame(
-            {
-                "Measurement": [
-                    "Movement Distance",
-                    "Heart Rate Variability",
-                    "Blood Glucose",
-                    "Oxygen Saturation",
-                ],
-                "Submitted Value": [
-                    movement_distance,
-                    hrv,
-                    glucose_level,
-                    oxygen_level,
-                ],
-            }
+    if performance_dataframe is not None:
+        st.bar_chart(
+            performance_dataframe.set_index("Metric")["Score"],
+            use_container_width=True,
         )
 
         st.dataframe(
-            submitted_values,
+            performance_dataframe,
             hide_index=True,
             use_container_width=True,
         )
 
+        st.caption("Scores are displayed as percentages.")
+
+    else:
+        st.info(
+            "No evaluation metrics were found in the saved model bundle yet."
+        )
+
+        st.markdown(
+            """
+            <div class="reference-box">
+                <strong>How to add your chart:</strong> Store your real test-set
+                metrics inside the saved model bundle under a
+                <code>performance</code> dictionary, or replace this section with
+                your confusion matrix, ROC curve, or comparison chart.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.code(
+            """
+    performance = {
+        "Accuracy": 0.85,
+        "Precision": 0.82,
+        "Recall": 0.79,
+        "F1 Score": 0.80,
+    }
+            """.strip(),
+            language="python",
+        )
+
+    with st.expander("How to interpret model performance"):
+        st.write(
+            "Accuracy shows the share of correct predictions overall. Precision "
+            "describes how often a predicted class was correct. Recall describes "
+            "how many actual cases of a class the model identified. F1 score "
+            "balances precision and recall. For fall-risk research, class-level "
+            "performance is generally more informative than accuracy alone."
+        )
+
 
 # =========================================================
-# MODEL STATUS
+# ABOUT TAB
 # =========================================================
-with st.expander("Model status"):
-    if model_path is None:
-        st.warning("No supported model file was detected.")
-    elif model_loading_error:
-        st.error(f"Model detected but could not be loaded: {model_path}")
-    else:
-        st.success(f"Model loaded successfully: {model_path}")
+with about_tab:
+    st.markdown(
+        """
+        <div class="section-label">Project context</div>
+        <div class="section-title">Why we chose this topic</div>
+        <div class="section-description">
+            Falls can reduce independence and quality of life, especially among
+            older adults. Our project explores whether wearable sensor signals
+            could support earlier recognition of mobility concerns and help
+            researchers better understand patterns surrounding fall events.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    card_one, card_two, card_three = st.columns(3)
+
+    with card_one:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h3>Problem</h3>
+
+            <p>
+                    Fall risk may develop before a visible fall occurs, but subtle
+                    changes can be difficult to recognize consistently.
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with card_two:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h3>Research question</h3>
+
+            <p>
+                Can movement and physiological measurements help distinguish
+                normal activity from near-fall or fall-related patterns?
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with card_three:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h3>Goal</h3>
+
+            <p>
+                Build an interpretable research prototype that presents a risk
+                estimate while clearly communicating uncertainty and limits.
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    with st.expander("Model status"):
+        if model_path is None:
+            st.warning("No supported model file was detected.")
+
+        elif model_loading_error:
+            st.error(
+                f"Model detected but could not be loaded: {model_path}"
+            )
+
+        else:
+            st.success(
+                f"Model loaded successfully: {model_path}"
+            )
 
 
 # =========================================================
@@ -1215,15 +1492,17 @@ with st.expander("Model status"):
 # =========================================================
 st.markdown(
     """
-<div class="disclaimer">
-    <strong>Research disclaimer:</strong>
-    This application is intended for educational and research purposes.
-    It is not a medical device and does not provide a diagnosis, treatment
-    recommendation, or emergency assessment. The displayed reference
-    information is general and may not represent the thresholds learned by
-    the machine-learning model. Medical concerns should be discussed with a
-    qualified healthcare professional.
-</div>
+    <div class="disclaimer">
+        <strong>Research disclaimer:</strong>
+        This application is intended for educational and research purposes.
+        It is not a medical device and does not provide a diagnosis, treatment
+        recommendation, or emergency assessment. Model confidence does not
+        represent medical certainty. The displayed explanations are general,
+        rule-based interpretations of the submitted values and may not represent
+        the exact thresholds or internal reasoning learned by the machine-learning
+        model. Medical concerns should be discussed with a qualified healthcare
+        professional.
+    </div>
     """,
     unsafe_allow_html=True,
 )
