@@ -380,6 +380,52 @@ st.markdown(
             overflow-x: auto;
         }
 
+        .graph-viewer-panel,
+        .graph-nav-panel {
+            padding: 1.2rem 1.25rem;
+            border: 1px solid #303640;
+            border-radius: 16px;
+            background-color: #171b22;
+            box-sizing: border-box;
+        }
+
+        .graph-nav-panel {
+            position: sticky;
+            top: 1.25rem;
+        }
+
+        .graph-nav-title {
+            margin: 0 0 0.35rem 0;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 750;
+        }
+
+        .graph-nav-caption {
+            margin-bottom: 0.9rem;
+            color: #aeb5c1;
+            line-height: 1.55;
+            font-size: 0.93rem;
+        }
+
+        div[data-testid="stRadio"] {
+            gap: 0.25rem;
+        }
+
+        div[data-testid="stRadio"] label {
+            padding: 0.35rem 0.5rem 0.35rem 0.15rem;
+            border-radius: 10px;
+        }
+
+        div[data-testid="stRadio"] label:hover {
+            background-color: rgba(114, 214, 170, 0.08);
+        }
+
+        div[data-testid="stRadio"] label[data-checked="true"] {
+            background-color: rgba(114, 214, 170, 0.14);
+            border: 1px solid rgba(114, 214, 170, 0.45);
+        }
+
         hr {
             margin-top: 3rem;
             margin-bottom: 3rem;
@@ -427,6 +473,9 @@ MODEL_EXTENSIONS = [
     "*.pickle",
     "*.joblib",
 ]
+
+APP_DIR = Path(__file__).resolve().parent
+OUTPUTS_DIR = APP_DIR / "outputs"
 
 
 # =========================================================
@@ -1343,58 +1392,137 @@ with performance_tab:
         <div class="section-label">Evaluation</div>
         <div class="section-title">Model performance</div>
         <div class="section-description">
-            Review model quality separately from the prediction form. Add your
-            evaluation chart and metrics here after calculating them on your
-            held-out test data.
+            Browse the evaluation visuals one at a time. SisFall is the main
+            result, while cStick is shown as a smaller baseline comparison.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    performance_dataframe = get_performance_dataframe(model_bundle)
+    sisfall_confusion_path = OUTPUTS_DIR / "sisfall_confusion_matrices.png"
+    sisfall_trials_path = OUTPUTS_DIR / "sisfall_fall_vs_adl.png"
+    sisfall_features_path = OUTPUTS_DIR / "sisfall_features_boxplots.png"
+    cstick_confusion_path = OUTPUTS_DIR / "cstick_confusion_matrices.png"
 
-    if performance_dataframe is not None:
-        st.bar_chart(
-            performance_dataframe.set_index("Metric")["Score"],
-            use_container_width=True,
-        )
+    graph_options = [
+        "sisfall_confusion",
+        "sisfall_trials",
+        "sisfall_features",
+        "cstick_confusion",
+    ]
 
-        st.dataframe(
-            performance_dataframe,
-            hide_index=True,
-            use_container_width=True,
-        )
+    graph_specs = {
+        "sisfall_confusion": {
+            "title": "SIS Fall Confusion Matrix",
+            "path": sisfall_confusion_path,
+            "description": (
+                "This confusion matrix shows how well the SisFall classifier "
+                "separates fall from non-fall trials, including the elderly "
+                "subset check. It is the main performance result for the "
+                "project, and it is useful because it shows both correct "
+                "predictions and the kinds of mistakes the model makes. "
+                "Interpret the diagonal cells as correct predictions and the "
+                "off-diagonal cells as errors."
+            ),
+        },
+        "sisfall_trials": {
+            "title": "SIS Fall Raw Signal",
+            "path": sisfall_trials_path,
+            "description": (
+                "This plot compares a fall trial with an ADL trial using the "
+                "raw sensor signal. It is useful because it shows the sharp "
+                "impact spike in a fall versus the steadier pattern of normal "
+                "movement. Look for the sudden spike in the fall trace and the "
+                "more regular oscillation in the ADL trace."
+            ),
+        },
+        "sisfall_features": {
+            "title": "SIS Fall Feature Boxplots",
+            "path": sisfall_features_path,
+            "description": (
+                "These boxplots show the engineered SisFall features split by "
+                "class. They are useful because they explain why the model can "
+                "learn the fall-versus-ADL separation from summary statistics. "
+                "Tighter separation between the two boxes suggests a more "
+                "predictive feature."
+            ),
+        },
+        "cstick_confusion": {
+            "title": "cStick Confusion Matrix",
+            "path": cstick_confusion_path,
+            "description": (
+                "This confusion matrix shows the cStick baseline model, which "
+                "is included for comparison because it is much easier than "
+                "SisFall. It is useful as a reference point, but the perfect "
+                "or near-perfect result should be interpreted cautiously due "
+                "to the dataset's unusually clean separation. The diagonal "
+                "cells show correct predictions; the off-diagonal cells would "
+                "show any mix-ups."
+            ),
+        },
+    }
 
-        st.caption("Scores are displayed as percentages.")
+    left_column, right_column = st.columns([3.3, 1.2], gap="large")
 
-    else:
-        st.info(
-            "No evaluation metrics were found in the saved model bundle yet."
-        )
-
+    with right_column:
         st.markdown(
             """
-            <div class="reference-box">
-                <strong>How to add your chart:</strong> Store your real test-set
-                metrics inside the saved model bundle under a
-                <code>performance</code> dictionary, or replace this section with
-                your confusion matrix, ROC curve, or comparison chart.
+            <div class="graph-nav-panel">
+                <div class="graph-nav-title">Graph Navigator</div>
+                <div class="graph-nav-caption">
+                    Select a single visualization to display on the left.
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        st.code(
-            """
-    performance = {
-        "Accuracy": 0.85,
-        "Precision": 0.82,
-        "Recall": 0.79,
-        "F1 Score": 0.80,
-    }
-            """.strip(),
-            language="python",
+        selected_graph = st.radio(
+            label="Choose a graph",
+            options=graph_options,
+            index=0,
+            format_func=lambda key: graph_specs[key]["title"],
+            key="performance_graph_selector",
+            label_visibility="collapsed",
         )
+
+    with left_column:
+        selected_spec = graph_specs[selected_graph]
+        if selected_spec["path"].exists():
+            st.image(
+                str(selected_spec["path"]),
+                caption=selected_spec["title"],
+                use_container_width=True,
+            )
+            st.markdown(
+                f"""
+                <div class="reference-box" style="margin-top: 1rem; margin-bottom: 0;">
+                    <strong>Description:</strong> {selected_spec["description"]}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.warning(f"{selected_spec['title']} image was not found in outputs/.")
+
+        st.markdown("<div style='height: 1.25rem;'></div>", unsafe_allow_html=True)
+
+    performance_dataframe = get_performance_dataframe(model_bundle)
+
+    if performance_dataframe is not None:
+        with st.expander("Optional metric summary"):
+            st.bar_chart(
+                performance_dataframe.set_index("Metric")["Score"],
+                use_container_width=True,
+            )
+
+            st.dataframe(
+                performance_dataframe,
+                hide_index=True,
+                use_container_width=True,
+            )
+
+            st.caption("Scores are displayed as percentages.")
 
     with st.expander("How to interpret model performance"):
         st.write(
