@@ -579,6 +579,14 @@ if model_path is not None:
             sisfall_loaded = True
         except Exception:
             sisfall_loaded = False
+            # Load HAR70 model (for display/demo purposes)
+        har70_loaded = False
+
+        try:
+            har70_bundle = load_model("models/har70_model.pkl")
+            har70_loaded = True
+        except Exception:
+            har70_loaded = False
 
     except Exception as error:
         model_loading_error = f"{type(error).__name__}: {repr(error)}"
@@ -1625,6 +1633,10 @@ with about_tab:
             st.success("SisFall Model: sisfall_model.pkl ✅ Loaded Successfully")
         else:
             st.error("SisFall Model could not be loaded.")
+        if har70_loaded:
+            st.success("HAR70 Model: har70_model.pkl ✅ Loaded Successfully")
+        else:
+            st.error("HAR70 Model could not be loaded.")
 
 
 # =========================================================

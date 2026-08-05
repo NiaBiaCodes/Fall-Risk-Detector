@@ -46,3 +46,24 @@ plt.close()
 print("\nSaved outputs/har70_kmeans_clusters.png")
 
 df.to_csv("data/har70_windows_clustered.csv", index=False)
+import pickle
+from pathlib import Path
+
+Path("models").mkdir(exist_ok=True)
+
+har70_bundle = {
+    "model": kmeans,
+    "model_name": "HAR70 K-Means",
+    "scaler": scaler,
+    "features": FEATURES,
+    "class_names": [
+        "Cluster 0",
+        "Cluster 1",
+        "Cluster 2",
+    ],
+}
+
+with open("models/har70_model.pkl", "wb") as file:
+    pickle.dump(har70_bundle, file)
+
+print("Saved models/har70_model.pkl")
