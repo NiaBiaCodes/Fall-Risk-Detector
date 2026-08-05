@@ -571,10 +571,18 @@ if model_path is not None:
         model_features = model_bundle["features"]
         class_names = model_bundle["class_names"]
 
+        # Load SisFall model (for display/demo purposes)
+        sisfall_loaded = False
+
+        try:
+            sisfall_bundle = load_model("models/sisfall_model.pkl")
+            sisfall_loaded = True
+        except Exception:
+            sisfall_loaded = False
+
     except Exception as error:
         model_loading_error = f"{type(error).__name__}: {repr(error)}"
         model_loading_traceback = traceback.format_exc()
-
 
 # =========================================================
 # PREDICTION HELPERS
@@ -1325,6 +1333,7 @@ with assessment_tab:
             risk_level=risk_level,
             factors=factors,
         )
+
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
 
@@ -1610,9 +1619,12 @@ with about_tab:
             )
 
         else:
-            st.success(
-                f"Model loaded successfully: {model_path}"
-            )
+            st.success(f"Primary Model: {model_path.name} ✅")
+
+        if sisfall_loaded:
+            st.success("SisFall Model: sisfall_model.pkl ✅ Loaded Successfully")
+        else:
+            st.error("SisFall Model could not be loaded.")
 
 
 # =========================================================
