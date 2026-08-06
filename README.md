@@ -76,11 +76,7 @@ python training/phase2_har70_kmeans.py   # k-means clustering -> outputs/har70_k
 
 | Team Member | Role | Primary Responsibilities |
 |-------------|------|--------------------------|
-| Nia Bardavelidze | Product Manager, Frontend Engineer  | Led product planning and feature prioritization
-                                                          Designed and developed the Streamlit frontend
-                                                          Integrated CStick, SisFall, and HAR70 models into the application
-                                                          Implemented explainable AI features, model confidence indicators, and result explanations 
-                                                          Improved accessibility, usability, and overall user experience. |
+| Nia Bardavelidze | Product Manager, Frontend Engineer  | Led product planning and feature prioritization, Designed and developed the Streamlit frontend, Integrated CStick, SisFall, and HAR70 models into the application, Implemented explainable AI features, model confidence indicators, and result explanations, Improved accessibility, usability, and overall user experience. |
 | Person 2 | Machine Learning Engineer | Model development, training, evaluation, feature engineering |
 | Person 3 | Data Scientist | Data cleaning, exploratory data analysis (EDA), preprocessing, validation |
 | Person 4 | Frontend Developer | Streamlit UI, user experience, manual input forms, visualization |
