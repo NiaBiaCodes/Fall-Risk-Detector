@@ -14,7 +14,12 @@ At this stage, the application accepts **manual input** for mobility and health-
 
 **Watch here:** [https://drive.google.com/file/d/1rqiITppq6TDBb2uaZHLSljVoZGNp9ma6/view?usp=sharing]
 
----**Research question**: Can wearable sensor data and vital sign measurements be used to distinguish normal movements from near-fall and fall events in older adults?
+## 📊 Slide Presentation
+
+**View here:** [https://docs.google.com/presentation/d/1zZuH-Ocy6EXxmI-8jUPQVVzRwY0kmVNgPyN6-D6ro5E/edit?usp=sharing]
+
+---
+**Research question**: Can wearable sensor data and vital sign measurements be used to distinguish normal movements from near-fall and fall events in older adults?
 
 ## Setup
 
@@ -85,9 +90,10 @@ python training/phase2_har70_kmeans.py   # k-means clustering -> outputs/har70_k
 | Team Member | Role | Primary Responsibilities |
 |-------------|------|--------------------------|
 | Nia Bardavelidze | Product Manager, Frontend Engineer  | Led product planning and feature prioritization, Designed and developed the Streamlit frontend, Integrated CStick, SisFall, and HAR70 models into the application, Implemented explainable AI features, model confidence indicators, and result explanations, Improved accessibility, usability, and overall user experience. |
-| Person 2 | Machine Learning Engineer | Model development, training, evaluation, feature engineering |
-| Person 3 | Data Scientist | Data cleaning, exploratory data analysis (EDA), preprocessing, validation |
-| Person 4 | Frontend Developer | Streamlit UI, user experience, manual input forms, visualization |
-| Person 5 | Backend Developer | Application logic, model integration, data pipeline, deployment support |
+| Prabhnoor Kaur | Machine Learning Engineer | Model development, training, evaluation, feature engineering |
+| Purvi Bojedla | Data Scientist | Data cleaning, exploratory data analysis (EDA), preprocessing, validation |
+| Zarwah Mughal | Software Engineer | Streamlit UI, user experience, manual input forms, visualization |
+| Michael Rubrico
+ | Software Engineer | Application logic, model integration, data pipeline, deployment support |
 
 
