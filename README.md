@@ -6,7 +6,15 @@ Using wearable sensor data to detect early signs of mobility decline and fall ri
 
 At this stage, the application accepts **manual input** for mobility and health-related measurements rather than collecting data directly from wearable devices.
 
-**Research question**: Can wearable sensor data and vital sign measurements be used to distinguish normal movements from near-fall and fall events in older adults?
+## 🚀 Live Demo
+
+**Website:** [https://trustfall.streamlit.app]
+
+## 🎥 Demo Video
+
+**Watch here:** [https://drive.google.com/file/d/1rqiITppq6TDBb2uaZHLSljVoZGNp9ma6/view?usp=sharing]
+
+---**Research question**: Can wearable sensor data and vital sign measurements be used to distinguish normal movements from near-fall and fall events in older adults?
 
 ## Setup
 
