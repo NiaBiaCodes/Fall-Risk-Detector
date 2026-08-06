@@ -2,6 +2,10 @@
 
 Using wearable sensor data to detect early signs of mobility decline and fall risk in older adults, so caregivers can intervene proactively instead of reactively.
 
+**Current stage:** MVP (Manual Data Entry)
+
+At this stage, the application accepts **manual input** for mobility and health-related measurements rather than collecting data directly from wearable devices.
+
 **Research question**: Can wearable sensor data and vital sign measurements be used to distinguish normal movements from near-fall and fall events in older adults?
 
 ## Setup
@@ -69,5 +73,13 @@ python training/phase2_har70_kmeans.py   # k-means clustering -> outputs/har70_k
 - Logistic Regression -- binary/multiclass baseline (cStick, SisFall)
 - Decision Trees -- interpretable rules for caregiving context (cStick, SisFall)
 - k-Means Clustering -- unsupervised pattern discovery (HAR70+)
+
+| Team Member | Role | Primary Responsibilities |
+|-------------|------|--------------------------|
+| Nia Bardavelidze | Product Manager | Project planning, requirements, sprint management, documentation, stakeholder communication |
+| Person 2 | Machine Learning Engineer | Model development, training, evaluation, feature engineering |
+| Person 3 | Data Scientist | Data cleaning, exploratory data analysis (EDA), preprocessing, validation |
+| Person 4 | Frontend Developer | Streamlit UI, user experience, manual input forms, visualization |
+| Person 5 | Backend Developer | Application logic, model integration, data pipeline, deployment support |
 
 
